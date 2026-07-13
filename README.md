@@ -191,3 +191,4 @@ laminate first-ply-failure analysis, a real control-system model, etc.) is
 straightforward given the modular structure, but not required to call this
 delivery complete against the spec as given.
 # vawt-simulator
+# vawt-simulator
