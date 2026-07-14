@@ -3,9 +3,12 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "node ./node_modules/typescript/lib/tsc.js -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview"
   },
