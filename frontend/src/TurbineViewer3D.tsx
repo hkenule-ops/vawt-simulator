@@ -71,12 +71,10 @@ function WindParticles({ count = 60, speed = 1 }: { count?: number; speed?: numb
   return (
     <points ref={points}>
       <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          count={positions.length / 3}
-          array={positions}
-          itemSize={3}
-        />
+          <bufferAttribute
+            attach="attributes-position"
+            args={[positions, 3]}
+          />
       </bufferGeometry>
       <pointsMaterial color="#7dd3fc" size={0.04} transparent opacity={0.7} />
     </points>
