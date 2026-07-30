@@ -5,6 +5,7 @@ from pathlib import Path
 import string
 
 import numpy as np
+from packaging.version import parse as parse_version
 import pytest
 
 import matplotlib as mpl
@@ -112,7 +113,10 @@ def test_indexed_image():
 
     with pikepdf.Pdf.open(buf) as pdf:
         page, = pdf.pages
-        image, = page.images.values()
+        if parse_version(pikepdf.__version__) < parse_version('10.9.0'):
+            image, = page.images.values()
+        else:
+            image, = page.get_images().values()
         pdf_image = pikepdf.PdfImage(image)
         assert pdf_image.indexed
         pil_image = pdf_image.as_pil_image()
@@ -366,7 +370,7 @@ def test_glyphs_subset():
     # subsetted FT2Font
     glyph_indices = {nosubcmap[ord(c)] for c in chars}
     with get_glyphs_subset(fm.FontPath(fpath, 0), glyph_indices) as subset:
-        subfont = FT2Font(font_as_file(subset))
+        subfont = FT2Font(font_as_file(subset.font))
     subfont.set_text(chars)
     subcmap = subfont.get_charmap()
 

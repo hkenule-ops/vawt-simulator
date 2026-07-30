@@ -32,10 +32,13 @@ export default function CompositesPanel({ geometry, windSpeed, tipSpeedRatio }: 
 
   return (
     <div className="panel cfd-panel">
-      <h2>Stage 4 - Composite Spar Optimization</h2>
-      <p className="hint">
-        Classical Laminate Theory spar cap ([0]<sub>n</sub>) and shear web ([±45]<sub>ns</sub>) layup
-        search, minimizing mass subject to a target safety factor, at V={windSpeed} m/s, TSR={tipSpeedRatio}.
+      <h2>
+        Composite Spar Optimization
+        <span className="stage-badge">Stage 4</span>
+      </h2>
+      <p className="panel-desc">
+        Classical laminate theory search for spar cap ([0]<sub>n</sub>) and shear web ([±45]<sub>ns</sub>)
+        layups — minimise mass for a target safety factor at V={windSpeed} m/s, TSR={tipSpeedRatio}.
       </p>
 
       <div className="row">

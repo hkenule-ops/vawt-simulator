@@ -46,10 +46,14 @@ export default function FatiguePanel({ geometry, tipSpeedRatio }: Props) {
 
   return (
     <div className="panel cfd-panel">
-      <h2>Stage 5 - Fatigue Analysis</h2>
-      <p className="hint">
+      <h2>
+        Fatigue Analysis
+        <span className="stage-badge">Stage 5</span>
+      </h2>
+      <p className="panel-desc">
         Rainflow counting of the per-revolution azimuthal stress cycle (the dominant VAWT fatigue
-        driver), weighted across a Weibull wind distribution, accumulated via Miner's rule.
+        driver), weighted across a Weibull wind distribution and accumulated with Miner's rule.
+        Rotor size and material choice strongly affect life.
       </p>
 
       <div className="row">

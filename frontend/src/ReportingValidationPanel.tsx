@@ -37,11 +37,13 @@ export default function ReportingValidationPanel({ geometry }: Props) {
 
   return (
     <div className="panel cfd-panel">
-      <h2>Stage 12 - Reporting &amp; Validation</h2>
-      <p className="hint">
-        Generate a full design report (DOCX/PDF/XLSX/CSV) assembled from a single live analysis
-        run across Stages 1-7, plus a system validation checklist that re-derives key physical
-        and financial invariants for this specific design.
+      <h2>
+        Reporting &amp; Validation
+        <span className="stage-badge">Stage 12</span>
+      </h2>
+      <p className="panel-desc">
+        Full design report (DOCX / PDF / XLSX / CSV) from a live Stages 1–7 run, plus a system
+        validation checklist that re-derives key physical and financial invariants for this design.
       </p>
 
       <div className="row">

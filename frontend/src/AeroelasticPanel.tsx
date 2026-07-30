@@ -52,10 +52,14 @@ export default function AeroelasticPanel({ geometry, tipSpeedRatio }: Props) {
 
   return (
     <div className="panel cfd-panel">
-      <h2>Stage 6 - Aeroelasticity</h2>
-      <p className="hint">
-        Modal analysis (natural frequencies, validated against closed-form beam vibration theory)
-        overlaid with real NP excitation lines and the actual harmonic content of the Stage-1 aero load.
+      <h2>
+        Aeroelasticity
+        <span className="stage-badge">Stage 6</span>
+      </h2>
+      <p className="panel-desc">
+        Modal analysis (natural frequencies, checked against closed-form beam theory) with NP
+        excitation lines and Stage-1 aero load harmonics. Blade length and mass distribution from
+        the geometry set resonance risk.
       </p>
 
       <div className="row">

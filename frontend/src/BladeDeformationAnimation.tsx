@@ -75,11 +75,13 @@ export default function BladeDeformationAnimation({ geometry, windSpeed, tipSpee
 
   return (
     <div className="panel cfd-panel">
-      <h2>Stage 11 - Blade Deformation Under Load</h2>
-      <p className="hint">
-        Real Stage-3 beam FEM deflection shape, animated as a loading/unloading cycle
-        (visually exaggerated — max deflection is normalized to a visible pixel amplitude
-        and shown numerically alongside).
+      <h2>
+        Blade Deformation Under Load
+        <span className="stage-badge">Stage 11</span>
+      </h2>
+      <p className="panel-desc">
+        Stage-3 beam FEM deflection shape, animated as a load/unload cycle. Deflection is
+        visually exaggerated for clarity; the true max deflection is shown in millimetres.
       </p>
 
       <div className="row">

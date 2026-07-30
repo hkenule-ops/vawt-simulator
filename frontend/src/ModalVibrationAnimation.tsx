@@ -64,11 +64,13 @@ export default function ModalVibrationAnimation({ geometry, tipSpeedRatio }: Pro
 
   return (
     <div className="panel cfd-panel">
-      <h2>Stage 11 - Modal Vibration Animation</h2>
-      <p className="hint">
-        Real mode shapes from Stage 6, animated at a watchable visual rate (the true natural
-        frequency is shown numerically, not literally rendered — modes here run into the hundreds
-        of Hz, far faster than a screen refresh can usefully show).
+      <h2>
+        Modal Vibration Animation
+        <span className="stage-badge">Stage 11</span>
+      </h2>
+      <p className="panel-desc">
+        Mode shapes from Stage 6, animated at a watchable rate. True natural frequency is shown
+        numerically (often hundreds of Hz — too fast to render literally).
       </p>
 
       <div className="row">

@@ -42,12 +42,14 @@ export default function OptimizationPanel({ geometry }: Props) {
 
   return (
     <div className="panel cfd-panel">
-      <h2>Stage 8 - Multi-Objective Optimization</h2>
-      <p className="hint">
-        NSGA-II (pymoo) search over rotor radius, blade height, chord, and spar sizing — maximizing
-        AEP, minimizing LCOE and blade mass, subject to the Stage-3 structural safety constraint.
-        Fast preview search: promising designs should still go through the full pipeline before
-        being trusted for a final decision.
+      <h2>
+        Multi-Objective Optimization
+        <span className="stage-badge">Stage 8</span>
+      </h2>
+      <p className="panel-desc">
+        NSGA-II search over rotor radius, blade height, chord, and spar sizing — maximise AEP,
+        minimise LCOE and blade mass, subject to the Stage-3 structural safety constraint.
+        Use as a fast preview; re-run the full pipeline on shortlisted designs.
       </p>
 
       <div className="row">

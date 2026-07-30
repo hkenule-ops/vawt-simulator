@@ -55,10 +55,14 @@ export default function StructuralPanel({ geometry, windSpeed, tipSpeedRatio }: 
 
   return (
     <div className="panel cfd-panel">
-      <h2>Stage 3 - Structural Analysis (FEA)</h2>
-      <p className="hint">
-        Euler-Bernoulli beam finite element analysis of the blade spar under peak aerodynamic
-        loading (from Stage 1) plus centrifugal loading, at V={windSpeed} m/s, TSR={tipSpeedRatio}.
+      <h2>
+        Structural Analysis (FEA)
+        <span className="stage-badge">Stage 3</span>
+      </h2>
+      <p className="panel-desc">
+        Euler-Bernoulli beam FEA of the blade spar under peak aerodynamic load (Stage 1) plus
+        centrifugal loading at V={windSpeed} m/s, TSR={tipSpeedRatio}. Radius, height, and chord
+        drive both aero loads and spar length/section.
       </p>
 
       <div className="row">

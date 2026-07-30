@@ -60,10 +60,13 @@ export default function OptimizationEvolutionPanel({ geometry }: Props) {
 
   return (
     <div className="panel cfd-panel">
-      <h2>Stage 10 - Pareto Front Evolution</h2>
-      <p className="hint">
-        Watch NSGA-II actually converge, generation by generation — real per-generation snapshots
-        from the Stage-8 optimizer, not an interpolated fake.
+      <h2>
+        Pareto Front Evolution
+        <span className="stage-badge">Stage 10</span>
+      </h2>
+      <p className="panel-desc">
+        Watch NSGA-II converge generation by generation — real per-generation snapshots from the
+        Stage-8 optimiser, not an interpolated animation.
       </p>
 
       <div className="row">

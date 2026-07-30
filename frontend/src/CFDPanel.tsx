@@ -74,7 +74,14 @@ export default function CFDPanel({ geometry, windSpeed, tipSpeedRatio }: Props) 
 
   return (
     <div className="panel cfd-panel">
-      <h2>Stage 2 - CFD Validation</h2>
+      <h2>
+        CFD Validation
+        <span className="stage-badge">Stage 2</span>
+      </h2>
+      <p className="panel-desc">
+        Cross-check BEM with panel-method surface pressures and optional OpenFOAM results.
+        Geometry and operating point come from the design inputs and rated wind on the left.
+      </p>
 
       <h3>2a. Surface pressure distribution (panel method)</h3>
       <p className="hint">

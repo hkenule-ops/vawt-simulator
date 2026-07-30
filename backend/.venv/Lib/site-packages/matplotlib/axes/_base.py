@@ -580,6 +580,18 @@ class _AxesBase(martist.Artist):
     data area boundaries.
     """
 
+    transData: mtransforms.Transform
+    """
+    The transformation from data coordinates to display coordinates.
+    See  :ref:`transforms_tutorial`.
+    """
+
+    transAxes: mtransforms.Transform
+    """
+    The transformation from axes coordinates to display coordinates.
+    See  :ref:`transforms_tutorial`.
+    """
+
     xaxis: maxis.XAxis
     """
     The `.XAxis` instance.
@@ -3256,7 +3268,12 @@ class _AxesBase(martist.Artist):
             if title.get_text():
                 for ax in axs:
                     ax.yaxis.get_tightbbox(renderer)  # update offsetText
-                    if ax.yaxis.offsetText.get_text():
+                    # A hidden offset text (e.g. on the shared y axis of an
+                    # inner subplot) is not drawn, so it must not move the
+                    # title: its tight bbox is non-finite and would otherwise
+                    # push the title to infinity.
+                    if (ax.yaxis.offsetText.get_visible()
+                            and ax.yaxis.offsetText.get_text()):
                         bb = ax.yaxis.offsetText.get_tightbbox(renderer)
                         if bb.intersection(title.get_tightbbox(renderer), bb):
                             top = bb.ymax
@@ -4737,7 +4754,10 @@ class _AxesBase(martist.Artist):
 
         for axis in self._axis_map.values():
             if self.axison and axis.get_visible():
-                ba = martist._get_tightbbox_for_layout_only(axis, renderer)
+                if for_layout_only:
+                    ba = martist._get_tightbbox_for_layout_only(axis, renderer)
+                else:
+                    ba = axis.get_tightbbox(renderer)
                 if ba:
                     bb.append(ba)
         self._update_title_position(renderer)

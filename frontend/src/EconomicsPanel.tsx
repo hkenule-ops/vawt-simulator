@@ -48,10 +48,14 @@ export default function EconomicsPanel({ geometry }: Props) {
 
   return (
     <div className="panel cfd-panel">
-      <h2>Stage 7 - Economics</h2>
-      <p className="hint">
+      <h2>
+        Economics
+        <span className="stage-badge">Stage 7</span>
+      </h2>
+      <p className="panel-desc">
         AEP from the Stage-1 power curve (rated-power-limited, with system losses) integrated
-        against a Weibull wind distribution; CAPEX grounded in the real Stage-4 spar mass.
+        against a Weibull wind resource; CAPEX grounded in Stage-4 spar mass. Geometry and
+        operating envelope on the left are the main AEP drivers.
       </p>
 
       <div className="row">

@@ -58,7 +58,8 @@ function WindParticles({ count = 60, speed = 1 }: { count?: number; speed?: numb
 
   useFrame((_, delta) => {
     if (!points.current) return;
-    const pos = points.current.geometry.attributes.position as THREE.BufferAttribute;
+    const pos = points.current.geometry.attributes.position as THREE.BufferAttribute | undefined;
+    if (!pos) return;
     for (let i = 0; i < count; i++) {
       let x = pos.getX(i) + delta * speed * 1.5;
       if (x > 4) x = -6;
@@ -70,7 +71,12 @@ function WindParticles({ count = 60, speed = 1 }: { count?: number; speed?: numb
   return (
     <points ref={points}>
       <bufferGeometry>
-        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+        <bufferAttribute
+          attach="attributes-position"
+          count={positions.length / 3}
+          array={positions}
+          itemSize={3}
+        />
       </bufferGeometry>
       <pointsMaterial color="#7dd3fc" size={0.04} transparent opacity={0.7} />
     </points>
@@ -145,10 +151,13 @@ export default function TurbineViewer3D({ geometry }: Props) {
 
   return (
     <div className="panel cfd-panel">
-      <h2>Stage 9 - 3D Turbine Visualization</h2>
-      <p className="hint">
-        Real-time rotating turbine driven by the Stage-1 BEM solver — RPM, torque, power, and Cp
-        are computed, not decorative.
+      <h2>
+        3D Turbine Visualization
+        <span className="stage-badge">Stage 9</span>
+      </h2>
+      <p className="panel-desc">
+        Live rotating turbine driven by the Stage-1 BEM solver. RPM, torque, power, and Cp are
+        computed from the current geometry and wind / TSR — not decorative numbers.
       </p>
 
       <div className="row">
