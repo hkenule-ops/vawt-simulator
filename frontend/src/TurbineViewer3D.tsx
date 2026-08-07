@@ -9,17 +9,42 @@ interface Props {
   geometry: HybridRotorIn;
 }
 
-/** One straight Darrieus blade: a thin extruded box standing in for the airfoil cross-section. */
+/**
+ * One Darrieus blade, rendered as `nSegments` stacked box segments (each a
+ * thin extruded stand-in for the airfoil cross-section) so a twisted or
+ * helical blade actually reads as twisted/helical in the viewer instead of
+ * always looking like a straight bar. With twistDeg = helicalDeg = 0 every
+ * segment collapses to the same orientation, so a straight blade still
+ * renders as one continuous straight bar (visually indistinguishable from
+ * the previous single-box version).
+ */
 function DarrieusBlade({
-  radius, height, chord, angleOffset,
-}: { radius: number; height: number; chord: number; angleOffset: number }) {
-  const x = radius * Math.cos(angleOffset);
-  const z = radius * Math.sin(angleOffset);
+  radius, height, chord, angleOffset, twistDeg = 0, helicalDeg = 0, nSegments = 8,
+}: {
+  radius: number; height: number; chord: number; angleOffset: number;
+  twistDeg?: number; helicalDeg?: number; nSegments?: number;
+}) {
+  const segments = Array.from({ length: nSegments }, (_, i) => {
+    const s = (i + 0.5) / nSegments; // span fraction, root(0) -> tip(1)
+    const segHeight = height / nSegments;
+    const yCenter = -height / 2 + s * height;
+    const localTwistRad = (twistDeg * s * Math.PI) / 180;
+    const localHelicalRad = (helicalDeg * s * Math.PI) / 180;
+    const angle = angleOffset + localHelicalRad;
+    const x = radius * Math.cos(angle);
+    const z = radius * Math.sin(angle);
+    return { x, z, yCenter, segHeight, rotY: -(angle + localTwistRad) };
+  });
+
   return (
-    <mesh position={[x, 0, z]} rotation={[0, -angleOffset, 0]}>
-      <boxGeometry args={[chord, height, chord * 0.18]} />
-      <meshStandardMaterial color="#38bdf8" metalness={0.3} roughness={0.4} />
-    </mesh>
+    <group>
+      {segments.map((seg, i) => (
+        <mesh key={i} position={[seg.x, seg.yCenter, seg.z]} rotation={[0, seg.rotY, 0]}>
+          <boxGeometry args={[chord, seg.segHeight * 1.02, chord * 0.18]} />
+          <meshStandardMaterial color="#38bdf8" metalness={0.3} roughness={0.4} />
+        </mesh>
+      ))}
+    </group>
   );
 }
 
@@ -103,7 +128,15 @@ function RotatingRotor({
     <group ref={group}>
       <Shaft height={d.blade_height_m} />
       {blades.map((a, i) => (
-        <DarrieusBlade key={i} radius={d.rotor_radius_m} height={d.blade_height_m} chord={d.chord_m} angleOffset={a} />
+        <DarrieusBlade
+          key={i}
+          radius={d.rotor_radius_m}
+          height={d.blade_height_m}
+          chord={d.chord_m}
+          angleOffset={a}
+          twistDeg={d.twist_angle_deg}
+          helicalDeg={d.helical_twist_deg}
+        />
       ))}
       {buckets.map((a, i) => (
         <SavoniusBucket key={i} diameter={s.bucket_diameter_m} height={s.bucket_height_m} angleOffset={a} />

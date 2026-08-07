@@ -14,7 +14,7 @@ def test_single_evaluation_matches_direct_pipeline_call():
 
     geom = HybridRotorGeometry()
     problem = RotorDesignProblem(geom)
-    X = np.array([[0.6, 1.2, 0.09, 0.5, 0.003]])
+    X = np.array([[0.6, 1.2, 0.09, 0.5, 0.003, 0.0, 0.0]])
     out = {}
     problem._evaluate(X, out)
 
@@ -27,7 +27,7 @@ def test_evaluation_returns_negative_aep_for_maximization():
     """AEP is negated internally since pymoo minimizes -- objective 0 should be negative for any positive AEP."""
     geom = HybridRotorGeometry()
     problem = RotorDesignProblem(geom)
-    X = np.array([[0.6, 1.2, 0.09, 0.5, 0.003]])
+    X = np.array([[0.6, 1.2, 0.09, 0.5, 0.003, 0.0, 0.0]])
     out = {}
     problem._evaluate(X, out)
     assert out["F"][0, 0] < 0
@@ -37,8 +37,8 @@ def test_larger_rotor_generally_increases_aep_magnitude():
     geom = HybridRotorGeometry()
     problem = RotorDesignProblem(geom)
     X = np.array([
-        [0.4, 0.8, 0.07, 0.5, 0.003],   # small rotor
-        [1.0, 2.0, 0.15, 0.5, 0.003],   # large rotor
+        [0.4, 0.8, 0.07, 0.5, 0.003, 0.0, 0.0],   # small rotor
+        [1.0, 2.0, 0.15, 0.5, 0.003, 0.0, 0.0],   # large rotor
     ])
     out = {}
     problem._evaluate(X, out)
@@ -51,7 +51,7 @@ def test_infeasible_design_flagged_by_constraint():
     """A deliberately undersized spar at high load should show a positive (violated) constraint value."""
     geom = HybridRotorGeometry()
     problem = RotorDesignProblem(geom, target_safety_factor=1.5)
-    X = np.array([[1.2, 2.5, 0.20, 0.2, 0.0015]])  # large rotor, thin spar -> high stress
+    X = np.array([[1.2, 2.5, 0.20, 0.2, 0.0015, 0.0, 0.0]])  # large rotor, thin spar -> high stress
     out = {}
     problem._evaluate(X, out)
     # Not asserting a specific sign here (depends on actual loads), just that it runs and returns a finite number
@@ -82,6 +82,32 @@ def test_pareto_front_shows_genuine_tradeoff_not_single_dominant_point():
     result = run_optimization(geom, population_size=16, n_generations=6, seed=2)
     aeps = [d.aep_kwh for d in result.pareto_front]
     assert max(aeps) > min(aeps) * 1.05  # meaningful spread, not a degenerate single point
+
+
+def test_twist_and_helical_design_vars_flow_through_evaluation():
+    """A nonzero twist/helical candidate should evaluate without error and be
+    reflected in the resulting geometry's aero response (a real physical
+    effect for twist -- see darrieus_bem docstring)."""
+    geom = HybridRotorGeometry()
+    problem = RotorDesignProblem(geom)
+    X = np.array([
+        [0.6, 1.2, 0.09, 0.5, 0.003, 0.0, 0.0],    # straight
+        [0.6, 1.2, 0.09, 0.5, 0.003, 10.0, 45.0],  # twisted + helical
+    ])
+    out = {}
+    problem._evaluate(X, out)
+    assert np.all(np.isfinite(out["F"]))
+    assert np.all(np.isfinite(out["G"]))
+
+
+def test_pareto_designs_report_twist_and_helical_fields():
+    geom = HybridRotorGeometry()
+    result = run_optimization(geom, population_size=12, n_generations=4, seed=1)
+    for d in result.pareto_front:
+        assert hasattr(d, "twist_angle_deg")
+        assert hasattr(d, "helical_twist_deg")
+        assert 0.0 <= d.twist_angle_deg <= 15.0
+        assert 0.0 <= d.helical_twist_deg <= 90.0
 
 
 def test_all_pareto_solutions_have_positive_mass_and_lcoe():

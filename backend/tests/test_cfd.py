@@ -89,3 +89,50 @@ def test_validation_report_passes_when_close():
     report = compare_bem_to_cfd(bem_point, close_cfd)
     assert report.percent_error < 1.0
     assert report.within_engineering_tolerance is True
+
+
+def test_straight_blade_stl_export_is_a_closed_solid():
+    from app.cfd.stl_export import generate_blade_stl
+    stl_text = generate_blade_stl(chord_m=0.09, thickness_ratio=0.18, span_m=1.2)
+    assert stl_text.startswith("solid blade")
+    assert stl_text.strip().endswith("endsolid blade")
+    assert stl_text.count("facet normal") > 0
+
+
+def test_twisted_helical_blade_stl_export_produces_more_geometry_than_straight():
+    """A twisted/helical blade is lofted station-by-station, so it should
+    produce meaningfully more triangles (side walls between stations) than
+    the simple linear-extrusion straight-blade path."""
+    from app.cfd.stl_export import generate_blade_stl
+    straight = generate_blade_stl(chord_m=0.09, thickness_ratio=0.18, span_m=1.2)
+    twisted = generate_blade_stl(
+        chord_m=0.09, thickness_ratio=0.18, span_m=1.2,
+        twist_angle_deg=10.0, helical_twist_deg=60.0, rotor_radius_m=0.6,
+    )
+    assert twisted.count("facet normal") > straight.count("facet normal")
+    assert twisted.strip().endswith("endsolid blade")
+
+
+def test_openfoam_case_readme_reports_actual_blade_shape():
+    """The generated case README should describe the actual blade shape
+    (straight vs twisted/helical) rather than a hardcoded 'not supported' note."""
+    geom_straight = HybridRotorGeometry(name="Straight Case")
+    geom_twisted = HybridRotorGeometry(name="Twisted Case")
+    geom_twisted.darrieus.twist_angle_deg = 8.0
+    geom_twisted.darrieus.helical_twist_deg = 45.0
+    cfg = CFDCaseConfig(wind_speed_ms=8.0, tip_speed_ratio=2.25)
+
+    zf_straight = zipfile.ZipFile(io.BytesIO(build_case_zip_bytes(geom_straight, cfg)))
+    zf_twisted = zipfile.ZipFile(io.BytesIO(build_case_zip_bytes(geom_twisted, cfg)))
+
+    readme_straight = zf_straight.read(
+        [n for n in zf_straight.namelist() if n.endswith("README.md")][0]
+    ).decode()
+    readme_twisted = zf_twisted.read(
+        [n for n in zf_twisted.namelist() if n.endswith("README.md")][0]
+    ).decode()
+
+    assert "not yet supported" not in readme_straight.lower()
+    assert "not yet supported" not in readme_twisted.lower()
+    assert "straight blade" in readme_straight.lower()
+    assert "helical" in readme_twisted.lower() and "45.0" in readme_twisted

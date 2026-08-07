@@ -20,6 +20,8 @@ class ParetoDesignOut(BaseModel):
     chord_m: float
     spar_width_fraction: float
     spar_wall_thickness_m: float
+    twist_angle_deg: float
+    helical_twist_deg: float
     aep_kwh: float
     lcoe_usd_per_kwh: float
     blade_mass_kg: float

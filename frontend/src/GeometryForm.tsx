@@ -133,6 +133,32 @@ export default function GeometryForm({ geometry, onChange }: Props) {
             Section shape affects Cl/Cd and stall; thickness also influences spar depth.
           </span>
         </label>
+        <div className="grid">
+          <NumField
+            label="Twist, root→tip (deg)"
+            value={geometry.darrieus.twist_angle_deg}
+            step={0.5}
+            min={0}
+            max={30}
+            onChange={(v) => setDarrieus({ twist_angle_deg: v })}
+            impact="Linear geometric twist from root (0°) to tip; changes local angle of attack and revolution-averaged Cp."
+          />
+          <NumField
+            label="Helical sweep, root→tip (deg)"
+            value={geometry.darrieus.helical_twist_deg}
+            step={5}
+            min={0}
+            max={360}
+            onChange={(v) => setDarrieus({ helical_twist_deg: v })}
+            impact="Azimuthal sweep of the blade shape from bottom to top (0° = straight/H-type). Smooths torque ripple; mean power stays about the same."
+          />
+        </div>
+        {(geometry.darrieus.twist_angle_deg !== 0 || geometry.darrieus.helical_twist_deg !== 0) && (
+          <p className="hint">
+            Spanwise-varying blade — aero, CFD case export, and structural loads now discretise the
+            blade along its span instead of treating it as one uniform straight section.
+          </p>
+        )}
         <div className="solidity-chip">
           Solidity σ = Nc/R =
           <span className="val">{solidity.toFixed(3)}</span>

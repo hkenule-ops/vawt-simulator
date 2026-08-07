@@ -85,3 +85,58 @@ def test_300w_target_geometry_lands_in_plausible_power_band():
     powers = [p.total_power_w for p in results if p is not None]
     assert max(powers) > 30       # not effectively zero
     assert max(powers) < 3000     # not off by 10x+
+
+
+def test_spanwise_stations_reduce_to_single_station_for_straight_blade():
+    from app.geometry.models import spanwise_stations
+    geom = DarrieusBladeGeometry()  # twist=helical=0 by default
+    stations = spanwise_stations(geom, n_stations=6)
+    assert len(stations) == 6
+    assert all(s.local_twist_deg == 0.0 for s in stations)
+    assert all(s.local_azimuth_offset_deg == 0.0 for s in stations)
+    assert sum(s.height_m for s in stations) == pytest.approx(geom.blade_height_m)
+
+
+def test_spanwise_stations_distribute_twist_and_helical_linearly_root_to_tip():
+    from app.geometry.models import spanwise_stations
+    geom = DarrieusBladeGeometry(twist_angle_deg=12.0, helical_twist_deg=90.0)
+    stations = spanwise_stations(geom, n_stations=4)
+    twists = [s.local_twist_deg for s in stations]
+    offsets = [s.local_azimuth_offset_deg for s in stations]
+    # Monotonically increasing root -> tip, capped by the total at the tip station.
+    assert twists == sorted(twists)
+    assert offsets == sorted(offsets)
+    assert twists[-1] < 12.0  # tip station is a midpoint, not exactly the tip
+    assert offsets[-1] < 90.0
+
+
+def test_twist_changes_mean_cp_but_straight_case_is_unaffected():
+    """Twist directly changes local angle of attack, so it's expected to
+    measurably shift the revolution-averaged Cp -- confirming it's wired
+    into the physics, not just stored as inert metadata."""
+    geom_straight = HybridRotorGeometry().darrieus
+    geom_twisted = DarrieusBladeGeometry(twist_angle_deg=8.0)
+
+    op_straight = solve_darrieus_operating_point(geom_straight, wind_speed_ms=8.0, tip_speed_ratio=2.25)
+    op_twisted = solve_darrieus_operating_point(geom_twisted, wind_speed_ms=8.0, tip_speed_ratio=2.25)
+
+    assert op_twisted.cp != pytest.approx(op_straight.cp, rel=1e-6)
+
+
+def test_helical_sweep_smooths_load_ripple_without_changing_mean_power_much():
+    """A helical blade is a constant per-station phase shift of an otherwise
+    periodic signal -- physically this should leave the revolution-averaged
+    power roughly unchanged while reducing the peak instantaneous normal
+    (flapwise) force, the classic helical/eggbeater-VAWT behaviour."""
+    from app.aero.darrieus_bem import compute_blade_spanwise_loads
+
+    geom_straight = HybridRotorGeometry().darrieus
+    geom_helical = DarrieusBladeGeometry(helical_twist_deg=60.0)
+
+    op_straight = solve_darrieus_operating_point(geom_straight, wind_speed_ms=8.0, tip_speed_ratio=2.25)
+    op_helical = solve_darrieus_operating_point(geom_helical, wind_speed_ms=8.0, tip_speed_ratio=2.25)
+    assert op_helical.power_w == pytest.approx(op_straight.power_w, rel=1e-2)
+
+    loads_straight = compute_blade_spanwise_loads(geom_straight, wind_speed_ms=8.0, tip_speed_ratio=2.25)
+    loads_helical = compute_blade_spanwise_loads(geom_helical, wind_speed_ms=8.0, tip_speed_ratio=2.25)
+    assert loads_helical.peak_normal_force_per_span_n_m < loads_straight.peak_normal_force_per_span_n_m

@@ -35,6 +35,64 @@ class DarrieusBladeGeometry:
 
 
 @dataclass
+class BladeSpanStation:
+    """
+    One spanwise element of a discretised Darrieus blade, root (index 0) to
+    tip (index n-1). This is the single source of truth for how twist/helical
+    parameters are distributed along the span -- the aero (BEM), CFD
+    (STL export), and (future) structural modules all discretise the blade
+    the same way by calling `spanwise_stations()` below, so a twisted/helical
+    blade always means the same physical shape everywhere in the platform.
+    """
+    span_fraction: float       # s in [0,1], root=0, tip=1 (station midpoint)
+    height_m: float            # height of this element (blade_height_m / n_stations)
+    z_start_m: float           # element's start height above the root
+    z_end_m: float             # element's end height above the root
+    local_twist_deg: float     # local geometric pitch/twist relative to root chord
+    local_azimuth_offset_deg: float  # local helical sweep relative to the root
+
+
+def spanwise_stations(geom: "DarrieusBladeGeometry", n_stations: int = 1) -> List[BladeSpanStation]:
+    """
+    Discretise a (possibly twisted/helical) blade into `n_stations` equal-
+    height elements from root to tip.
+
+    Convention (documented here once, relied on everywhere else):
+      - `twist_angle_deg` is the TOTAL geometric twist from root to tip,
+        distributed linearly along the span (root sees 0 deg local twist,
+        the tip sees the full `twist_angle_deg`). This is the standard
+        "linear twist distribution" convention used for research-grade wind
+        turbine blades.
+      - `helical_twist_deg` is the TOTAL azimuthal sweep from root to tip,
+        also distributed linearly, giving the classic helical/"eggbeater"
+        Darrieus shape (a straight blade is the degenerate helical_twist_deg=0
+        case). Physically this rotates each spanwise station's instantaneous
+        blade-fixed azimuth relative to the root by that amount.
+
+    With n_stations=1 and both angles at 0 (the defaults), this returns a
+    single station spanning the full blade height with zero twist/offset --
+    i.e. exactly the straight-blade behaviour the rest of the platform
+    already assumed, so existing callers are unaffected unless they opt in.
+    """
+    n = max(1, int(n_stations))
+    H = geom.blade_height_m
+    dz = H / n
+    stations = []
+    for i in range(n):
+        z0, z1 = i * dz, (i + 1) * dz
+        s = (z0 + z1) / 2.0 / H if H > 0 else 0.0
+        stations.append(BladeSpanStation(
+            span_fraction=s,
+            height_m=dz,
+            z_start_m=z0,
+            z_end_m=z1,
+            local_twist_deg=geom.twist_angle_deg * s,
+            local_azimuth_offset_deg=geom.helical_twist_deg * s,
+        ))
+    return stations
+
+
+@dataclass
 class SavoniusBucketGeometry:
     """Savonius rotor nested on the same shaft (drives low-TSR startup torque)."""
     num_buckets: int = 2

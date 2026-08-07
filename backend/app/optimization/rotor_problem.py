@@ -46,14 +46,23 @@ class DesignVariableBounds:
     chord_m: tuple[float, float] = (0.05, 0.20)
     spar_width_fraction: tuple[float, float] = (0.2, 0.7)
     spar_wall_thickness_m: tuple[float, float] = (0.0015, 0.008)
+    # Spanwise blade shape (Phase 14). Bounds default to a conservative
+    # research-informed range: 0-15 deg linear twist root-to-tip is the
+    # typical span used for twisted-blade VAWT studies before drag penalties
+    # from excessive twist start to dominate, and 0-90 deg helical sweep
+    # covers everything from a straight blade up to a quarter-turn helix
+    # (a common "H-type to helical" comparison range in the literature).
+    twist_angle_deg: tuple[float, float] = (0.0, 15.0)
+    helical_twist_deg: tuple[float, float] = (0.0, 90.0)
 
 
 def _build_geometry(x: np.ndarray, base: HybridRotorGeometry) -> tuple[HybridRotorGeometry, float, float]:
-    radius, height, chord, spar_width_frac, wall_m = x
+    radius, height, chord, spar_width_frac, wall_m, twist_deg, helical_deg = x
     darrieus = DarrieusBladeGeometry(
         num_blades=base.darrieus.num_blades, blade_height_m=float(height), rotor_radius_m=float(radius),
         chord_m=float(chord), airfoil=base.darrieus.airfoil,
         blade_thickness_ratio=base.darrieus.blade_thickness_ratio,
+        twist_angle_deg=float(twist_deg), helical_twist_deg=float(helical_deg),
     )
     geom = HybridRotorGeometry(
         name=base.name, target_power_w=base.target_power_w, darrieus=darrieus,
@@ -93,9 +102,11 @@ class RotorDesignProblem(Problem):
         b = bounds or DesignVariableBounds()
 
         xl = np.array([b.rotor_radius_m[0], b.blade_height_m[0], b.chord_m[0],
-                        b.spar_width_fraction[0], b.spar_wall_thickness_m[0]])
+                        b.spar_width_fraction[0], b.spar_wall_thickness_m[0],
+                        b.twist_angle_deg[0], b.helical_twist_deg[0]])
         xu = np.array([b.rotor_radius_m[1], b.blade_height_m[1], b.chord_m[1],
-                        b.spar_width_fraction[1], b.spar_wall_thickness_m[1]])
+                        b.spar_width_fraction[1], b.spar_wall_thickness_m[1],
+                        b.twist_angle_deg[1], b.helical_twist_deg[1]])
 
         # A coarse 8-point wind-speed sweep (vs. the default 25 used for a
         # final AEP report) -- sufficient resolution for comparing designs
@@ -104,7 +115,7 @@ class RotorDesignProblem(Problem):
             base_geometry.cut_in_wind_speed_ms, base_geometry.cut_out_wind_speed_ms, 8
         )]
 
-        super().__init__(n_var=5, n_obj=3, n_constr=1, xl=xl, xu=xu)
+        super().__init__(n_var=7, n_obj=3, n_constr=1, xl=xl, xu=xu)
 
     def _evaluate(self, X, out, *args, **kwargs):
         from app.structural.blade_analysis import analyze_blade_structure

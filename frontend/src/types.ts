@@ -228,6 +228,8 @@ export interface ParetoDesignOut {
   chord_m: number;
   spar_width_fraction: number;
   spar_wall_thickness_m: number;
+  twist_angle_deg: number;
+  helical_twist_deg: number;
   aep_kwh: number;
   lcoe_usd_per_kwh: number;
   blade_mass_kg: number;

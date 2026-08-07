@@ -25,6 +25,8 @@ class ParetoDesign:
     chord_m: float
     spar_width_fraction: float
     spar_wall_thickness_m: float
+    twist_angle_deg: float
+    helical_twist_deg: float
     aep_kwh: float
     lcoe_usd_per_kwh: float
     blade_mass_kg: float
@@ -53,6 +55,7 @@ def _rows_to_designs(X: np.ndarray, F: np.ndarray) -> list[ParetoDesign]:
             rotor_radius_m=float(x_row[0]), blade_height_m=float(x_row[1]),
             chord_m=float(x_row[2]), spar_width_fraction=float(x_row[3]),
             spar_wall_thickness_m=float(x_row[4]),
+            twist_angle_deg=float(x_row[5]), helical_twist_deg=float(x_row[6]),
             aep_kwh=float(-f_row[0]), lcoe_usd_per_kwh=float(f_row[1]),
             blade_mass_kg=float(f_row[2]),
         ))
