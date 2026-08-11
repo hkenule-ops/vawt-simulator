@@ -23,8 +23,23 @@ import "./app.css";
 
 const DEFAULT_WIND_SPEEDS = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
 
+const GEOMETRY_STORAGE_KEY = "vawt-simulator:geometry";
+
+function loadStoredGeometry(): HybridRotorIn {
+  try {
+    const raw = localStorage.getItem(GEOMETRY_STORAGE_KEY);
+    if (!raw) return DEFAULT_GEOMETRY;
+    const parsed = JSON.parse(raw);
+    // Merge over defaults so new fields added later (e.g. after an app
+    // update) still get sane values even if an old save is missing them.
+    return { ...DEFAULT_GEOMETRY, ...parsed };
+  } catch {
+    return DEFAULT_GEOMETRY;
+  }
+}
+
 export default function App() {
-  const [geometry, setGeometry] = useState<HybridRotorIn>(DEFAULT_GEOMETRY);
+  const [geometry, setGeometry] = useState<HybridRotorIn>(loadStoredGeometry);
   const [backendUp, setBackendUp] = useState<boolean | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [cpLambda, setCpLambda] = useState<any[]>([]);
@@ -36,6 +51,17 @@ export default function App() {
   useEffect(() => {
     checkHealth().then(setBackendUp);
   }, []);
+
+  // Persist geometry to localStorage whenever it changes so a reload
+  // (or accidental tab close) doesn't lose the user's inputs.
+  useEffect(() => {
+    try {
+      localStorage.setItem(GEOMETRY_STORAGE_KEY, JSON.stringify(geometry));
+    } catch {
+      // localStorage may be unavailable (private browsing, quota, etc.)
+      // — fail silently, this is a nice-to-have, not critical.
+    }
+  }, [geometry]);
 
   const runAnalysis = useCallback(async () => {
     setLoading(true);
