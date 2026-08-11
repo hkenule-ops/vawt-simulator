@@ -42,11 +42,13 @@ export default function OptimizationPanel({ geometry }: Props) {
   const [elapsed, setElapsed] = useState<number | null>(null);
   const [cfdWindSpeed, setCfdWindSpeed] = useState(geometry.rated_wind_speed_ms);
   const [downloadingCase, setDownloadingCase] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const plyKeyFor = (mat: string) => (mat === "GFRP_UD" ? "GFRP_UD_PLY" : "CFRP_UD_PLY");
 
   const run = async () => {
     setLoading(true);
+    setError(null);
     const t0 = performance.now();
     try {
       const res = await optimizeParetoFront(
@@ -56,6 +58,12 @@ export default function OptimizationPanel({ geometry }: Props) {
       setPareto(res.pareto_front);
       setElapsed((performance.now() - t0) / 1000);
       setSelected(null);
+    } catch (e: any) {
+      setError(
+        e?.code === "ECONNABORTED"
+          ? "Optimization timed out. Try a smaller population size or fewer generations."
+          : e?.response?.data?.detail ?? e?.message ?? "Optimization failed."
+      );
     } finally {
       setLoading(false);
     }
@@ -64,9 +72,12 @@ export default function OptimizationPanel({ geometry }: Props) {
   const downloadCaseForSelected = async () => {
     if (!selected) return;
     setDownloadingCase(true);
+    setError(null);
     try {
       const candidateGeometry = geometryFromParetoDesign(geometry, selected);
       await downloadOpenFOAMCase(candidateGeometry, cfdWindSpeed, operatingTsr);
+    } catch (e: any) {
+      setError(e?.response?.data?.detail ?? e?.message ?? "CFD case download failed.");
     } finally {
       setDownloadingCase(false);
     }
@@ -119,6 +130,8 @@ export default function OptimizationPanel({ geometry }: Props) {
         </label>
         <button onClick={run} disabled={loading}>{loading ? "Optimizing..." : "Run Optimization"}</button>
       </div>
+
+      {error && <p className="error">{error}</p>}
 
       {pareto.length > 0 && (
         <>

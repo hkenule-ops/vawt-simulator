@@ -183,12 +183,20 @@ export async function optimizeParetoFront(
   seed = 1,
   captureHistory = false
 ): Promise<OptimizationResponse> {
-  const r = await client.post<OptimizationResponse>("/optimization/pareto-front", {
-    geometry, material, ply_material: plyMaterial,
-    population_size: populationSize, n_generations: nGenerations,
-    target_safety_factor: targetSafetyFactor, operating_tsr: operatingTsr, seed,
-    capture_history: captureHistory,
-  });
+  // NSGA-II runs population_size * n_generations full BEM/structural/economics
+  // evaluations, so this can legitimately take much longer than the other
+  // (single-evaluation) endpoints — the shared 30s client timeout was cutting
+  // it off silently. Give it a generous budget of its own.
+  const r = await client.post<OptimizationResponse>(
+    "/optimization/pareto-front",
+    {
+      geometry, material, ply_material: plyMaterial,
+      population_size: populationSize, n_generations: nGenerations,
+      target_safety_factor: targetSafetyFactor, operating_tsr: operatingTsr, seed,
+      capture_history: captureHistory,
+    },
+    { timeout: 180000 }
+  );
   return r.data;
 }
 

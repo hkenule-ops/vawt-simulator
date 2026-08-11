@@ -15,18 +15,29 @@ export default function OptimizationEvolutionPanel({ geometry }: Props) {
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const rafRef = useRef<number | null>(null);
   const lastTickRef = useRef<number>(0);
 
   const run = async () => {
     setLoading(true);
     setPlaying(false);
+    setError(null);
     try {
       const res = await optimizeParetoFront(
         geometry, "CFRP_UD", "CFRP_UD_PLY", 16, 12, 1.5, 2.25, 1, true
       );
+      if (res.generation_history.length === 0) {
+        setError("Optimizer returned no generation history — capture_history may not be supported by the backend.");
+      }
       setHistory(res.generation_history);
       setGenIndex(0);
+    } catch (e: any) {
+      setError(
+        e?.code === "ECONNABORTED"
+          ? "Evolution capture timed out. This runs 16×12 = 192 evaluations with history tracking, which can be slow on cold starts — try again."
+          : e?.response?.data?.detail ?? e?.message ?? "Evolution capture failed."
+      );
     } finally {
       setLoading(false);
     }
@@ -87,6 +98,8 @@ export default function OptimizationEvolutionPanel({ geometry }: Props) {
           </>
         )}
       </div>
+
+      {error && <p className="error">{error}</p>}
 
       {history.length > 0 && currentGen && (
         <>
