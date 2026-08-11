@@ -3,6 +3,7 @@ import type {
   HybridRotorIn, CpLambdaResponse, PowerCurveResponse, PanelMethodResponse, ValidationResponse,
   StructuralAnalysisResponse, MaterialOut, CompositeCompareResponse, FatigueAnalysisResponse,
   AeroelasticAnalysisResponse, EconomicAnalysisResponse, OptimizationResponse, ValidationReportOut,
+  OptimizationJobCreateOut, OptimizationJobStatusOut,
 } from "./types";
 
 const API_BASE =
@@ -181,23 +182,50 @@ export async function optimizeParetoFront(
   targetSafetyFactor = 1.5,
   operatingTsr = 2.25,
   seed = 1,
-  captureHistory = false
+  captureHistory = false,
+  onProgress?: (status: OptimizationJobStatusOut) => void
 ): Promise<OptimizationResponse> {
   // NSGA-II runs population_size * n_generations full BEM/structural/economics
-  // evaluations, so this can legitimately take much longer than the other
-  // (single-evaluation) endpoints — the shared 30s client timeout was cutting
-  // it off silently. Give it a generous budget of its own.
-  const r = await client.post<OptimizationResponse>(
-    "/optimization/pareto-front",
-    {
-      geometry, material, ply_material: plyMaterial,
-      population_size: populationSize, n_generations: nGenerations,
-      target_safety_factor: targetSafetyFactor, operating_tsr: operatingTsr, seed,
-      capture_history: captureHistory,
-    },
-    { timeout: 180000 }
-  );
-  return r.data;
+  // evaluations. Rather than one long synchronous request (which reliably
+  // 504s on Vercel once that gets large), this creates a resumable job and
+  // repeatedly calls its /step endpoint — each step only does a few seconds
+  // of work server-side and returns, so no individual request can time out.
+  const createRes = await client.post<OptimizationJobCreateOut>("/optimization/jobs", {
+    geometry, material, ply_material: plyMaterial,
+    population_size: populationSize, n_generations: nGenerations,
+    target_safety_factor: targetSafetyFactor, operating_tsr: operatingTsr, seed,
+    capture_history: captureHistory,
+  });
+  const jobId = createRes.data.job_id;
+
+  const maxSteps = 300; // safety valve so a stuck job can't poll forever
+  let status: OptimizationJobStatusOut;
+  let stepCount = 0;
+  do {
+    const stepRes = await client.post<OptimizationJobStatusOut>(
+      `/optimization/jobs/${jobId}/step`,
+      undefined,
+      { timeout: 30000 }
+    );
+    status = stepRes.data;
+    onProgress?.(status);
+    stepCount += 1;
+  } while ((status.status === "pending" || status.status === "running") && stepCount < maxSteps);
+
+  if (status.status === "failed") {
+    throw new Error(status.error ?? "Optimization job failed.");
+  }
+  if (status.status !== "completed") {
+    throw new Error("Optimization is taking longer than expected — try again or reduce population/generations.");
+  }
+
+  return {
+    pareto_front: status.pareto_front ?? [],
+    n_generations: status.n_generations,
+    population_size: status.population_size,
+    n_evaluated: status.n_evaluated,
+    generation_history: status.generation_history,
+  };
 }
 
 async function downloadReport(

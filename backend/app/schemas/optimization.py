@@ -39,3 +39,30 @@ class OptimizationResponse(BaseModel):
     population_size: int
     n_evaluated: int
     generation_history: list[GenerationSnapshotOut] = []
+
+
+class OptimizationJobCreateOut(BaseModel):
+    """
+    Returned immediately by POST /optimization/jobs -- no evaluations have
+    run yet. The client drives progress by calling
+    POST /optimization/jobs/{job_id}/step repeatedly until status is
+    "completed" or "failed"; each step call is bounded to a few seconds of
+    work so it can't itself time out.
+    """
+    job_id: str
+    status: str
+    population_size: int
+    n_generations: int
+
+
+class OptimizationJobStatusOut(BaseModel):
+    job_id: str
+    status: str  # pending | running | completed | failed
+    population_size: int
+    n_generations: int
+    generations_completed: int
+    n_evaluated: int
+    progress_pct: float
+    pareto_front: list[ParetoDesignOut] | None = None
+    generation_history: list[GenerationSnapshotOut] = []
+    error: str | None = None

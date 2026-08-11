@@ -10,6 +10,7 @@ from app.api import (
     routes_reporting, routes_validation,
 )
 from app.models import design  # noqa: F401 - ensures model is registered before create_all
+from app.models import optimization_job  # noqa: F401 - ensures model is registered before create_all
 
 settings = get_settings()
 

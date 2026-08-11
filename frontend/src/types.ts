@@ -249,6 +249,26 @@ export interface OptimizationResponse {
   generation_history: GenerationSnapshotOut[];
 }
 
+export interface OptimizationJobCreateOut {
+  job_id: string;
+  status: string;
+  population_size: number;
+  n_generations: number;
+}
+
+export interface OptimizationJobStatusOut {
+  job_id: string;
+  status: "pending" | "running" | "completed" | "failed";
+  population_size: number;
+  n_generations: number;
+  generations_completed: number;
+  n_evaluated: number;
+  progress_pct: number;
+  pareto_front: ParetoDesignOut[] | null;
+  generation_history: GenerationSnapshotOut[];
+  error: string | null;
+}
+
 export interface CheckResultOut {
   name: string;
   passed: boolean;
