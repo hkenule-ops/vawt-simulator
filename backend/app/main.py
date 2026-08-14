@@ -7,10 +7,9 @@ from app.core.database import Base, engine
 from app.api import (
     routes_geometry, routes_bem, routes_cfd, routes_structural, routes_composites,
     routes_fatigue, routes_aeroelastic, routes_economics, routes_optimization,
-    routes_reporting, routes_validation,
+    routes_reporting, routes_validation, routes_electrical,
 )
 from app.models import design  # noqa: F401 - ensures model is registered before create_all
-from app.models import optimization_job  # noqa: F401 - ensures model is registered before create_all
 
 settings = get_settings()
 
@@ -56,3 +55,4 @@ app.include_router(routes_economics.router, prefix=settings.api_v1_prefix)
 app.include_router(routes_optimization.router, prefix=settings.api_v1_prefix)
 app.include_router(routes_reporting.router, prefix=settings.api_v1_prefix)
 app.include_router(routes_validation.router, prefix=settings.api_v1_prefix)
+app.include_router(routes_electrical.router, prefix=settings.api_v1_prefix)

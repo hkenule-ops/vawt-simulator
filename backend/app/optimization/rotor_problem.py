@@ -66,7 +66,7 @@ def _build_geometry(x: np.ndarray, base: HybridRotorGeometry) -> tuple[HybridRot
     )
     geom = HybridRotorGeometry(
         name=base.name, target_power_w=base.target_power_w, darrieus=darrieus,
-        savonius=base.savonius, shaft=base.shaft,
+        savonius=base.savonius, shaft=base.shaft, generator=base.generator, tower=base.tower,
         rated_wind_speed_ms=base.rated_wind_speed_ms,
         cut_in_wind_speed_ms=base.cut_in_wind_speed_ms, cut_out_wind_speed_ms=base.cut_out_wind_speed_ms,
     )

@@ -6,6 +6,7 @@ from app.models.design import DesignRecord
 from app.schemas.geometry import HybridRotorIn, DesignSaveRequest, DesignOut
 from app.geometry.models import (
     HybridRotorGeometry, DarrieusBladeGeometry, SavoniusBucketGeometry, ShaftGeometry,
+    GeneratorGeometry, TowerGeometry,
 )
 
 router = APIRouter(prefix="/geometry", tags=["geometry"])
@@ -18,6 +19,8 @@ def to_domain(geom_in: HybridRotorIn) -> HybridRotorGeometry:
         darrieus=DarrieusBladeGeometry(**geom_in.darrieus.model_dump()),
         savonius=SavoniusBucketGeometry(**geom_in.savonius.model_dump()),
         shaft=ShaftGeometry(**geom_in.shaft.model_dump()),
+        generator=GeneratorGeometry(**geom_in.generator.model_dump()),
+        tower=TowerGeometry(**geom_in.tower.model_dump()),
         rated_wind_speed_ms=geom_in.rated_wind_speed_ms,
         cut_in_wind_speed_ms=geom_in.cut_in_wind_speed_ms,
         cut_out_wind_speed_ms=geom_in.cut_out_wind_speed_ms,

@@ -15,6 +15,7 @@ import OptimizationEvolutionPanel from "./OptimizationEvolutionPanel";
 import ModalVibrationAnimation from "./ModalVibrationAnimation";
 import BladeDeformationAnimation from "./BladeDeformationAnimation";
 import ReportingValidationPanel from "./ReportingValidationPanel";
+import GeneratorTowerPanel from "./GeneratorTowerPanel";
 import ErrorBoundary from "./ErrorBoundary";
 import { DEFAULT_GEOMETRY } from "./types";
 import type { HybridRotorIn } from "./types";
@@ -246,6 +247,7 @@ export default function App() {
             tipSpeedRatio={2.25}
           />
           <ReportingValidationPanel geometry={geometry} />
+          <GeneratorTowerPanel geometry={geometry} tipSpeedRatio={2.25} />
         </div>
       </div>
     </div>

@@ -27,12 +27,33 @@ class ShaftIn(BaseModel):
     material: str = "AISI_304_Stainless"
 
 
+class GeneratorIn(BaseModel):
+    pole_pairs: int = Field(8, ge=1, le=60)
+    phase_resistance_ohm: float = Field(0.15, gt=0, le=50)
+    synchronous_reactance_ohm: float = Field(0.08, ge=0, le=50)
+    torque_constant_nm_per_a: float = Field(0.8, gt=0, le=20)
+    voltage_constant_v_per_rad_s: float | None = Field(None, gt=0, le=20)
+    load_resistance_ohm: float = Field(3.0, gt=0, le=500)
+    core_loss_coefficient: float = Field(0.01, ge=0, le=5)
+    cogging_torque_peak_nm: float = Field(0.15, ge=0, le=50)
+    slot_count: int = Field(24, ge=3, le=180)
+
+
+class TowerIn(BaseModel):
+    height_m: float = Field(1.0, gt=0, le=100)
+    reference_height_m: float = Field(10.0, gt=0, le=200)
+    wind_shear_exponent: float = Field(0.20, ge=0, le=0.6)
+    apply_wind_shear: bool = False
+
+
 class HybridRotorIn(BaseModel):
     name: str = "Hybrid VAWT"
     target_power_w: float = Field(300.0, gt=0, le=100000)
     darrieus: DarrieusBladeIn = DarrieusBladeIn()
     savonius: SavoniusBucketIn = SavoniusBucketIn()
     shaft: ShaftIn = ShaftIn()
+    generator: GeneratorIn = GeneratorIn()
+    tower: TowerIn = TowerIn()
     rated_wind_speed_ms: float = Field(10.0, gt=0, le=60)
     cut_in_wind_speed_ms: float = Field(3.0, gt=0, le=20)
     cut_out_wind_speed_ms: float = Field(20.0, gt=0, le=80)

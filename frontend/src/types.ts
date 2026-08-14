@@ -24,12 +24,33 @@ export interface ShaftIn {
   material: string;
 }
 
+export interface GeneratorIn {
+  pole_pairs: number;
+  phase_resistance_ohm: number;
+  synchronous_reactance_ohm: number;
+  torque_constant_nm_per_a: number;
+  voltage_constant_v_per_rad_s: number | null;
+  load_resistance_ohm: number;
+  core_loss_coefficient: number;
+  cogging_torque_peak_nm: number;
+  slot_count: number;
+}
+
+export interface TowerIn {
+  height_m: number;
+  reference_height_m: number;
+  wind_shear_exponent: number;
+  apply_wind_shear: boolean;
+}
+
 export interface HybridRotorIn {
   name: string;
   target_power_w: number;
   darrieus: DarrieusBladeIn;
   savonius: SavoniusBucketIn;
   shaft: ShaftIn;
+  generator: GeneratorIn;
+  tower: TowerIn;
   rated_wind_speed_ms: number;
   cut_in_wind_speed_ms: number;
   cut_out_wind_speed_ms: number;
@@ -249,26 +270,6 @@ export interface OptimizationResponse {
   generation_history: GenerationSnapshotOut[];
 }
 
-export interface OptimizationJobCreateOut {
-  job_id: string;
-  status: string;
-  population_size: number;
-  n_generations: number;
-}
-
-export interface OptimizationJobStatusOut {
-  job_id: string;
-  status: "pending" | "running" | "completed" | "failed";
-  population_size: number;
-  n_generations: number;
-  generations_completed: number;
-  n_evaluated: number;
-  progress_pct: number;
-  pareto_front: ParetoDesignOut[] | null;
-  generation_history: GenerationSnapshotOut[];
-  error: string | null;
-}
-
 export interface CheckResultOut {
   name: string;
   passed: boolean;
@@ -280,6 +281,42 @@ export interface ValidationReportOut {
   all_passed: boolean;
   n_passed: number;
   n_total: number;
+}
+
+export interface GeneratorOperatingPointOut {
+  omega_mech_rad_s: number;
+  rpm: number;
+  electrical_freq_hz: number;
+  mechanical_torque_nm: number;
+  mechanical_power_w: number;
+  phase_current_a: number;
+  back_emf_v: number;
+  terminal_voltage_v: number;
+  copper_loss_w: number;
+  core_loss_w: number;
+  electrical_power_w: number;
+  efficiency: number;
+}
+
+export interface TorqueSpeedCurveResponse {
+  points: GeneratorOperatingPointOut[];
+  cogging_ripple_frequency_hz_at_max_rpm: number;
+}
+
+export interface BreakawayCheckOut {
+  cogging_torque_peak_nm: number;
+  rotor_starting_torque_nm: number;
+  can_break_away: boolean;
+  margin_nm: number;
+}
+
+export interface GeneratorAnalysisResponse {
+  aero_operating_point: HybridOperatingPointOut;
+  generator_operating_point: GeneratorOperatingPointOut;
+  breakaway_check: BreakawayCheckOut;
+  hub_height_m: number;
+  wind_speed_at_hub_ms: number;
+  warnings: string[];
 }
 
 export const DEFAULT_GEOMETRY: HybridRotorIn = {
@@ -307,6 +344,23 @@ export const DEFAULT_GEOMETRY: HybridRotorIn = {
     outer_diameter_mm: 40,
     wall_thickness_mm: 4,
     material: "AISI_304_Stainless",
+  },
+  generator: {
+    pole_pairs: 8,
+    phase_resistance_ohm: 0.15,
+    synchronous_reactance_ohm: 0.08,
+    torque_constant_nm_per_a: 0.8,
+    voltage_constant_v_per_rad_s: null,
+    load_resistance_ohm: 3.0,
+    core_loss_coefficient: 0.01,
+    cogging_torque_peak_nm: 0.15,
+    slot_count: 24,
+  },
+  tower: {
+    height_m: 1.0,
+    reference_height_m: 10.0,
+    wind_shear_exponent: 0.20,
+    apply_wind_shear: false,
   },
   rated_wind_speed_ms: 10,
   cut_in_wind_speed_ms: 3,

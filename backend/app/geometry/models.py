@@ -121,6 +121,53 @@ class ShaftGeometry:
 
 
 @dataclass
+class GeneratorGeometry:
+    """
+    Permanent-magnet synchronous generator/alternator (the standard choice for
+    small direct-drive VAWTs -- no gearbox, so the rotor's mechanical shaft
+    speed IS the generator's mechanical speed).
+
+    Electromagnetic convention: for a PM machine the torque constant k_t
+    [Nm/A] and back-EMF constant k_e [V per mechanical rad/s] are numerically
+    equal in SI units (same physical flux linkage produces both effects), so
+    `voltage_constant_v_per_rad_s` defaults to `torque_constant_nm_per_a`
+    unless explicitly overridden (e.g. to model a non-ideal/saturated
+    machine).
+    """
+    pole_pairs: int = 8
+    phase_resistance_ohm: float = 0.15
+    synchronous_reactance_ohm: float = 0.08
+    torque_constant_nm_per_a: float = 0.8
+    voltage_constant_v_per_rad_s: float | None = None  # None -> defaults to torque_constant
+    load_resistance_ohm: float = 3.0        # effective load reflected through the rectifier
+    core_loss_coefficient: float = 0.01     # W per (rad/s)^1.5, hysteresis + eddy current
+    cogging_torque_peak_nm: float = 0.15    # peak detent torque, nameplate-style estimate
+    slot_count: int = 24
+
+    @property
+    def k_e(self) -> float:
+        return self.voltage_constant_v_per_rad_s if self.voltage_constant_v_per_rad_s is not None \
+            else self.torque_constant_nm_per_a
+
+
+@dataclass
+class TowerGeometry:
+    """
+    Simple support tower. `apply_wind_shear=False` by default so existing
+    designs/analyses are completely unaffected unless a user opts in --
+    when enabled, wind speeds supplied to the aero solver (assumed measured
+    at `reference_height_m`, the standard wind-resource reference height)
+    are corrected to the rotor's actual hub height using the classic
+    power-law wind shear profile (IEC 61400-2 default exponent for small
+    wind turbines in normal terrain).
+    """
+    height_m: float = 1.0
+    reference_height_m: float = 10.0
+    wind_shear_exponent: float = 0.20
+    apply_wind_shear: bool = False
+
+
+@dataclass
 class HybridRotorGeometry:
     """Full hybrid rotor: Darrieus blades wrap around a central Savonius rotor."""
     name: str = "Hybrid VAWT"
@@ -128,9 +175,29 @@ class HybridRotorGeometry:
     darrieus: DarrieusBladeGeometry = field(default_factory=DarrieusBladeGeometry)
     savonius: SavoniusBucketGeometry = field(default_factory=SavoniusBucketGeometry)
     shaft: ShaftGeometry = field(default_factory=ShaftGeometry)
+    generator: GeneratorGeometry = field(default_factory=GeneratorGeometry)
+    tower: TowerGeometry = field(default_factory=TowerGeometry)
     rated_wind_speed_ms: float = 10.0
     cut_in_wind_speed_ms: float = 3.0
     cut_out_wind_speed_ms: float = 20.0
+
+    @property
+    def hub_height_m(self) -> float:
+        """Height of the rotor's vertical midpoint (equator) above ground."""
+        return self.tower.height_m + self.darrieus.blade_height_m / 2.0
+
+    def wind_speed_at_hub(self, reference_wind_speed_ms: float) -> float:
+        """
+        Corrects a reference-height wind speed to hub height via the power
+        law: V(h) = V_ref * (h / h_ref)^alpha. Returns the input unchanged
+        (no-op) unless `tower.apply_wind_shear` is enabled, so this is
+        purely additive to existing behaviour.
+        """
+        if not self.tower.apply_wind_shear:
+            return reference_wind_speed_ms
+        h_ref = max(self.tower.reference_height_m, 1e-6)
+        h_hub = max(self.hub_height_m, 1e-6)
+        return reference_wind_speed_ms * (h_hub / h_ref) ** self.tower.wind_shear_exponent
 
     @property
     def total_swept_area_m2(self) -> float:

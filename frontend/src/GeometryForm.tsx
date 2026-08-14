@@ -44,6 +44,10 @@ export default function GeometryForm({ geometry, onChange }: Props) {
     onChange({ ...geometry, darrieus: { ...geometry.darrieus, ...patch } });
   const setSavonius = (patch: Partial<HybridRotorIn["savonius"]>) =>
     onChange({ ...geometry, savonius: { ...geometry.savonius, ...patch } });
+  const setGenerator = (patch: Partial<HybridRotorIn["generator"]>) =>
+    onChange({ ...geometry, generator: { ...geometry.generator, ...patch } });
+  const setTower = (patch: Partial<HybridRotorIn["tower"]>) =>
+    onChange({ ...geometry, tower: { ...geometry.tower, ...patch } });
 
   const solidity =
     (geometry.darrieus.num_blades * geometry.darrieus.chord_m) /
@@ -232,6 +236,131 @@ export default function GeometryForm({ geometry, onChange }: Props) {
             impact="Shutdown above this for safety; limits storm contribution to AEP."
           />
         </div>
+      </div>
+
+      <div className="form-section">
+        <h3>Generator / alternator</h3>
+        <p className="hint">
+          Direct-drive PM synchronous generator (no gearbox — shaft speed = generator speed).
+          See the Generator/Tower panel below for the resulting torque-speed curve and operating point.
+        </p>
+        <div className="grid">
+          <NumField
+            label="Pole pairs"
+            value={geometry.generator.pole_pairs}
+            step={1}
+            min={1}
+            max={60}
+            onChange={(v) => setGenerator({ pole_pairs: Math.round(v) })}
+            impact="Sets electrical frequency and cogging ripple count; more poles → lower rpm for a given electrical frequency."
+          />
+          <NumField
+            label="Slot count"
+            value={geometry.generator.slot_count}
+            step={1}
+            min={3}
+            max={180}
+            onChange={(v) => setGenerator({ slot_count: Math.round(v) })}
+            impact="With pole pairs, sets cogging torque ripple frequency (LCM of slots and 2×poles)."
+          />
+          <NumField
+            label="Torque constant Kt (Nm/A)"
+            value={geometry.generator.torque_constant_nm_per_a}
+            step={0.01}
+            onChange={(v) => setGenerator({ torque_constant_nm_per_a: v })}
+            impact="Higher Kt → less current (and less copper loss) for the same torque, but lower back-EMF headroom."
+          />
+          <NumField
+            label="Phase resistance (Ω)"
+            value={geometry.generator.phase_resistance_ohm}
+            step={0.01}
+            min={0.001}
+            onChange={(v) => setGenerator({ phase_resistance_ohm: v })}
+            impact="Dominant loss term — copper loss scales with I²R; keep this small relative to load resistance."
+          />
+          <NumField
+            label="Synchronous reactance (Ω)"
+            value={geometry.generator.synchronous_reactance_ohm}
+            step={0.01}
+            min={0}
+            onChange={(v) => setGenerator({ synchronous_reactance_ohm: v })}
+            impact="Winding inductance's AC impedance; reduces terminal voltage under load but doesn't dissipate power."
+          />
+          <NumField
+            label="Load resistance (Ω)"
+            value={geometry.generator.load_resistance_ohm}
+            step={0.1}
+            min={0.01}
+            onChange={(v) => setGenerator({ load_resistance_ohm: v })}
+            impact="Effective resistive load reflected through the rectifier — used for the torque-speed curve."
+          />
+          <NumField
+            label="Core loss coefficient"
+            value={geometry.generator.core_loss_coefficient}
+            step={0.001}
+            min={0}
+            onChange={(v) => setGenerator({ core_loss_coefficient: v })}
+            impact="Hysteresis + eddy-current loss, W per (rad/s)^1.5 — grows with shaft speed."
+          />
+          <NumField
+            label="Peak cogging torque (Nm)"
+            value={geometry.generator.cogging_torque_peak_nm}
+            step={0.01}
+            min={0}
+            onChange={(v) => setGenerator({ cogging_torque_peak_nm: v })}
+            impact="If this exceeds the rotor's starting torque, the rotor can't self-start from rest."
+          />
+        </div>
+      </div>
+
+      <div className="form-section">
+        <h3>Tower</h3>
+        <p className="hint">
+          Sets rotor hub height and, optionally, corrects wind speeds for shear between the
+          reference measurement height and the rotor.
+        </p>
+        <div className="grid">
+          <NumField
+            label="Tower height (m)"
+            value={geometry.tower.height_m}
+            step={0.1}
+            min={0.1}
+            onChange={(v) => setTower({ height_m: v })}
+            impact="Raises hub height = tower height + half blade height; affects wind-shear-corrected inflow if enabled below."
+          />
+          <NumField
+            label="Reference height (m)"
+            value={geometry.tower.reference_height_m}
+            step={0.5}
+            min={0.5}
+            onChange={(v) => setTower({ reference_height_m: v })}
+            impact="Height at which the wind speeds you enter elsewhere are assumed to be measured (typically 10 m)."
+          />
+          <NumField
+            label="Wind shear exponent α"
+            value={geometry.tower.wind_shear_exponent}
+            step={0.01}
+            min={0}
+            max={0.6}
+            onChange={(v) => setTower({ wind_shear_exponent: v })}
+            impact="Power-law exponent V(h)=V_ref·(h/h_ref)^α; IEC 61400-2 default 0.20 for small wind turbines."
+          />
+        </div>
+        <label className="field">
+          <span>
+            <input
+              type="checkbox"
+              checked={geometry.tower.apply_wind_shear}
+              onChange={(e) => setTower({ apply_wind_shear: e.target.checked })}
+              style={{ width: "auto", marginRight: 6 }}
+            />
+            Apply wind shear correction to hub height
+          </span>
+          <span className="field-impact">
+            Off by default (matches previous behaviour exactly). When on, wind speeds fed into
+            the BEM solver are corrected from the reference height above to the rotor's hub height.
+          </span>
+        </label>
       </div>
     </div>
   );
